@@ -6,8 +6,6 @@ Run the same Hue evaluation configuration locally and in GitHub. The Action inst
 hue eval --ci --config hue.eval.json --report-dir .hue/reports
 ```
 
-This integration is unreleased. Use it after the supporting Hue service and runner release are available; no stable Action tag exists yet.
-
 ## Add the workflow
 
 1. Connect your agent to each case's world with the [agent adapter guide](https://docs.hue.run/evaluations/eval-ready-agent).
@@ -55,7 +53,7 @@ For results-only recovery, use the released CLI's `hue eval status <run-id> --re
 
 Use GitHub-hosted Ubuntu or a compatible self-hosted Linux runner with Bash, Node.js 24, npm, and outbound access to npm, GitHub artifacts, and Hue. The bundled `actions/setup-node@v6` and `actions/upload-artifact@v6` require Actions runner `v2.327.1` or later for Node 24. Self-hosted runners need Node 24 on `PATH` so a failed setup step can still write reports. Install your agent's language runtime separately.
 
-GitHub Enterprise Server artifact support is outside this release. Private Action access from another repository requires the organization's normal private Action access settings; this draft changes no repository or organization policy.
+GitHub Enterprise Server artifact support is outside this release.
 
 ## Verify changes
 
