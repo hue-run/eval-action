@@ -93,7 +93,8 @@ function parseReport(text) {
       !(report.runUrl === null || typeof report.runUrl === 'string') ||
       !(report.receipt === null || (typeof report.receipt === 'object' && !Array.isArray(report.receipt))) ||
       !(report.verdict === null || verdicts.includes(report.verdict)) ||
-      (report.receipt === null ? report.verdict !== null : report.verdict !== report.receipt.verdict) ||
+      (report.receipt === null ? report.verdict !== null :
+        !verdicts.includes(report.receipt.verdict) || report.verdict !== report.receipt.verdict) ||
       (report.exitCode === 0 && (report.verdict !== 'pass' || report.category !== 'pass' || report.errors.length !== 0))) {
     throw new Error('Invalid runner report');
   }

@@ -89,6 +89,13 @@ test('exact version skips latest lookup and passes spaces without shell expansio
   assert.equal(args[3], 'config with spaces; echo bad.json');
 });
 
+test('a receipt must have a known verdict even when the process already failed', async (t) => {
+  const item = await drive(t, { FIXTURE_MODE: 'post-receipt-error', FIXTURE_CORRUPT: 'null-receipt-verdict' });
+  assert.equal(item.final.status, 1);
+  assert.equal(item.report.errors[0].code, 'ACTION_REPORTS');
+  assert.equal(item.outputs.verdict, '');
+});
+
 for (const [name, overrides, code, category] of [
   ['missing key', { HUE_API_KEY: '' }, 'ACTION_MISSING_KEY', 'authentication_error'],
   ['Node setup', { HUE_ACTION_NODE_OUTCOME: 'failure' }, 'ACTION_NODE_SETUP', 'configuration_error'],

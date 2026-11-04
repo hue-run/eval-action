@@ -47,6 +47,8 @@ The Action copies the runner's Markdown to the job summary and uploads only thes
 
 Exit codes remain `0` for pass, `1` for quality failure, agent error, Hue error, or incomplete execution, `2` for configuration or credential errors, and `130` for interruption. Reports upload before the final step restores that code. An artifact upload failure also fails the Action. Outputs remain available to later workflow steps that use `if: always()`.
 
+A pass receipt can accompany a nonzero exit if transport fails or the process is interrupted after finalization. The Action preserves both the receipt verdict and the failing exit code. A zero exit requires a pass receipt, a pass category, and no errors.
+
 For results-only recovery, use the released CLI's `hue eval status <run-id> --report-dir .hue/reports`. This reads saved results without executing the agent again. Reports after hard cancellation or runner loss are best effort; the invocation's remote deadline remains independent of the GitHub runner.
 
 ## Runner requirements
