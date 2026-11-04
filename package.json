@@ -1,0 +1,9 @@
+{
+  "name": "hue-eval-action",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "packageManager": "bun@1.3.9",
+  "scripts": { "test": "node --test", "check": "node --check src/run.mjs && node --test" },
+  "devDependencies": { "yaml": "2.8.2" }
+}
