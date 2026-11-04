@@ -6,6 +6,9 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 const filenames = ['results.json', 'junit.xml', 'summary.md'];
 const stableVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const exactVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const categories = ['pass', 'quality_failure', 'agent_error', 'configuration_error', 'authentication_error', 'hue_error', 'incomplete', 'cancelled'];
+const verdicts = ['pass', 'fail', 'incomplete', 'error', 'cancelled'];
 
 class ActionError extends Error {
   constructor(code, message, category = 'configuration_error', exitCode = 2) {
@@ -36,18 +39,29 @@ async function workspacePath(workspace, path) {
 
 function execute(command, args, options, signal, capture = false) {
   return new Promise((resolveResult, reject) => {
+    if (signal.aborted) return reject(new Error('Interrupted'));
     const child = spawn(command, args, {
       ...options,
-      signal,
       stdio: capture ? ['ignore', 'pipe', 'ignore'] : ['ignore', 'inherit', 'inherit'],
     });
+    let killTimer;
+    const interrupt = () => {
+      child.kill('SIGTERM');
+      killTimer = setTimeout(() => child.kill('SIGKILL'), 30_000);
+      killTimer.unref();
+    };
+    signal.addEventListener('abort', interrupt, { once: true });
     let stdout = '';
     child.stdout?.on('data', (chunk) => {
       stdout += chunk;
       if (stdout.length > 64 * 1024) child.kill();
     });
     child.once('error', reject);
-    child.once('close', (code, childSignal) => resolveResult({ code: code ?? (childSignal ? 130 : 1), stdout }));
+    child.once('close', (code, childSignal) => {
+      signal.removeEventListener('abort', interrupt);
+      clearTimeout(killTimer);
+      resolveResult({ code: code ?? (childSignal ? 130 : 1), stdout });
+    });
   });
 }
 
@@ -74,11 +88,13 @@ async function setupReports(reportDir, error) {
 function parseReport(text) {
   const report = JSON.parse(text);
   if (report?.schemaVersion !== 1 || !Array.isArray(report.errors) ||
-      !Number.isInteger(report.exitCode) ||
+      !report.errors.every((error) => typeof error?.code === 'string' && typeof error.message === 'string') ||
+      ![0, 1, 2, 130].includes(report.exitCode) || !categories.includes(report.category) ||
       !(report.runUrl === null || typeof report.runUrl === 'string') ||
       !(report.receipt === null || (typeof report.receipt === 'object' && !Array.isArray(report.receipt))) ||
-      !(report.verdict === null || typeof report.verdict === 'string') ||
-      (report.receipt === null && report.verdict !== null)) {
+      !(report.verdict === null || verdicts.includes(report.verdict)) ||
+      (report.receipt === null ? report.verdict !== null : report.verdict !== report.receipt.verdict) ||
+      (report.exitCode === 0 && (report.verdict !== 'pass' || report.category !== 'pass' || report.errors.length !== 0))) {
     throw new Error('Invalid runner report');
   }
   return report;
@@ -96,7 +112,8 @@ export async function runAction(env = process.env) {
   process.once('SIGINT', cancel);
   process.once('SIGTERM', cancel);
   const workspace = await realpath(env.GITHUB_WORKSPACE || process.cwd());
-  let reportDir = join(workspace, '.hue/reports');
+  const fallbackDir = await mkdtemp(join(env.RUNNER_TEMP || tmpdir(), 'hue-reports-'));
+  let reportDir = fallbackDir;
   let installDir;
   let report;
   let exitCode = 2;
@@ -115,8 +132,8 @@ export async function runAction(env = process.env) {
       throw new ActionError('ACTION_MISSING_KEY', 'HUE_API_KEY is unavailable. Configure a Read and write project key. Fork and Dependabot pull requests do not receive ordinary Actions secrets.', 'authentication_error');
     }
     const requested = env.HUE_ACTION_VERSION || 'latest';
-    if (requested !== 'latest' && !stableVersion.test(requested)) {
-      throw new ActionError('ACTION_VERSION', 'version must be latest or an exact stable runner version such as 0.26.0.');
+    if (requested !== 'latest' && !exactVersion.test(requested)) {
+      throw new ActionError('ACTION_VERSION', 'version must be latest or an exact released runner version such as 0.26.0.');
     }
     const options = { cwd, env };
     let version = requested;
@@ -154,11 +171,17 @@ export async function runAction(env = process.env) {
       : error instanceof ActionError ? error
         : new ActionError('ACTION_SETUP', 'Hue evals could not start or finish the runner. Check the configuration, Node.js 24, npm, and workspace permissions.', 'hue_error', exitCode === 2 ? 2 : exitCode || 1);
     exitCode = failure.exitCode;
-    report = await setupReports(reportDir, failure);
+    try {
+      report = await setupReports(reportDir, failure);
+    } catch {
+      reportDir = fallbackDir;
+      report = await setupReports(reportDir, failure);
+    }
   } finally {
     process.removeListener('SIGINT', cancel);
     process.removeListener('SIGTERM', cancel);
     if (installDir) await rm(installDir, { recursive: true, force: true });
+    if (reportDir !== fallbackDir) await rm(fallbackDir, { recursive: true, force: true });
   }
   await output(env, 'run-url', report.runUrl || '');
   await output(env, 'verdict', report.receipt ? report.verdict || '' : '');

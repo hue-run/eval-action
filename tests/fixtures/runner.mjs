@@ -11,8 +11,8 @@ if (mode === 'cancel') {
   await writeFile(process.env.FIXTURE_STARTED, 'started');
   await new Promise(() => setInterval(() => {}, 1_000));
 }
-const exitCode = { pass: 0, quality: 1, auth: 2, incomplete: 1, 'invalid-report': 0 }[mode] ?? 1;
-const receipt = mode === 'pass' || mode === 'quality' ? { id: 'synthetic-receipt', verdict: mode === 'pass' ? 'pass' : 'fail' } : null;
+const exitCode = { pass: 0, quality: 1, auth: 2, incomplete: 1, 'invalid-report': 0, 'post-receipt-error': 1 }[mode] ?? 1;
+const receipt = ['pass', 'quality', 'post-receipt-error'].includes(mode) ? { id: 'synthetic-receipt', verdict: mode === 'quality' ? 'fail' : 'pass' } : null;
 const report = {
   schemaVersion: 1,
   invocationId: 'synthetic-invocation',
@@ -20,11 +20,18 @@ const report = {
   runUrl: 'https://app.hue.run/synthetic/run',
   verdict: receipt?.verdict ?? null,
   receipt,
-  category: { pass: 'pass', quality: 'quality_failure', auth: 'authentication_error', incomplete: 'incomplete' }[mode] || 'pass',
-  errors: [],
+  category: { pass: 'pass', quality: 'quality_failure', auth: 'authentication_error', incomplete: 'incomplete', 'post-receipt-error': 'hue_error' }[mode] || 'pass',
+  errors: mode === 'post-receipt-error' ? [{ code: 'TRANSPORT_ERROR', message: 'Synthetic error after receipt' }] : [],
   exitCode,
 };
 if (mode === 'invalid-report') report.verdict = 'pass';
+const corrupt = process.env.FIXTURE_CORRUPT;
+if (corrupt === 'failed-receipt-zero-exit') report.verdict = report.receipt.verdict = 'fail';
+if (corrupt === 'receipt-disagrees') report.receipt.verdict = 'fail';
+if (corrupt === 'unknown-verdict') report.verdict = report.receipt.verdict = 'unknown';
+if (corrupt === 'error-category') report.category = 'hue_error';
+if (corrupt === 'unknown-category') report.category = 'unknown';
+if (corrupt === 'errors-on-pass') report.errors = [{ code: 'FAILURE', message: 'Failure' }];
 await mkdir(reportDir, { recursive: true });
 await writeFile(join(reportDir, 'results.json'), `${JSON.stringify(report)}\n`);
 await writeFile(join(reportDir, 'junit.xml'), `<testsuites tests="1" failures="${exitCode === 1 ? 1 : 0}"><testsuite name="fixture" tests="1"><testcase name="synthetic"/></testsuite></testsuites>\n`);

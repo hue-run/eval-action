@@ -26,7 +26,7 @@ Fork and Dependabot pull requests normally lack ordinary Actions secrets. The Ac
 | `config` | `hue.eval.json` | Configuration path relative to `working-directory`. |
 | `working-directory` | `.` | Agent project directory relative to the checked-out workspace. |
 | `report-dir` | `.hue/reports` | Report directory relative to `working-directory`, inside the workspace. |
-| `version` | `latest` | Latest stable npm release, or an exact stable version for debugging. |
+| `version` | `latest` | Latest stable npm release, or an exact released version for debugging. |
 
 The runner installs in a temporary directory. It does not change your lockfile or project dependencies. Install the SDK separately if your agent imports it. The exact runner version appears in `runner-version`.
 
@@ -43,7 +43,7 @@ The runner installs in a temporary directory. It does not change your lockfile o
 | `junit-xml` | Absolute path to `junit.xml`. |
 | `summary-md` | Absolute path to `summary.md`. |
 
-The Action copies the runner's Markdown to the job summary and uploads only these three report files as a `hue-evals-…` artifact. Checkpoints and agent scratch files are excluded. Installer, Node setup, and missing-key failures also create all three reports, with a null receipt and verdict. The wrapper never decides whether cases passed.
+The Action copies the runner's Markdown to the job summary and uploads only these three report files as a `hue-evals-…` artifact. Checkpoints and agent scratch files are excluded. Installer, Node setup, and missing-key failures also create all three reports, with a null receipt and verdict. An invalid or unwritable report path uses a new directory under the runner's temporary directory. The wrapper checks report and receipt consistency without scoring cases.
 
 Exit codes remain `0` for pass, `1` for quality failure, agent error, Hue error, or incomplete execution, `2` for configuration or credential errors, and `130` for interruption. Reports upload before the final step restores that code. An artifact upload failure also fails the Action. Outputs remain available to later workflow steps that use `if: always()`.
 

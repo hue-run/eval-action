@@ -71,11 +71,20 @@ test('latest selects and installs an exact stable release without project change
   assert.equal(cwd, item.directory);
 });
 
+test('preserves a pass receipt and failure evidence when the process fails after finalization', async (t) => {
+  const item = await drive(t, { FIXTURE_MODE: 'post-receipt-error' });
+  assert.equal(item.final.status, 1);
+  assert.equal(item.outputs.verdict, 'pass');
+  assert.equal(item.report.receipt.verdict, 'pass');
+  assert.equal(item.report.category, 'hue_error');
+  assert.equal(item.report.errors[0].code, 'TRANSPORT_ERROR');
+});
+
 test('exact version skips latest lookup and passes spaces without shell expansion', async (t) => {
-  const item = await drive(t, { HUE_ACTION_VERSION: '2.3.4', HUE_ACTION_CONFIG: 'config with spaces; echo bad.json' });
+  const item = await drive(t, { HUE_ACTION_VERSION: '2.3.4-rc.1', HUE_ACTION_CONFIG: 'config with spaces; echo bad.json' });
   const calls = (await readFile(item.env.FIXTURE_LOG, 'utf8')).trim().split('\n').map(JSON.parse);
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].at(-1), '@hue-run/sdk@2.3.4');
+  assert.equal(calls[0].at(-1), '@hue-run/sdk@2.3.4-rc.1');
   const { args } = JSON.parse(await readFile(item.env.FIXTURE_ARGS, 'utf8'));
   assert.equal(args[3], 'config with spaces; echo bad.json');
 });
@@ -101,6 +110,15 @@ for (const [name, overrides, code, category] of [
   });
 }
 
+for (const corruption of ['failed-receipt-zero-exit', 'receipt-disagrees', 'unknown-verdict', 'error-category', 'unknown-category', 'errors-on-pass']) {
+  test(`inconsistent ${corruption} report cannot produce a green check`, async (t) => {
+    const item = await drive(t, { FIXTURE_CORRUPT: corruption });
+    assert.equal(item.final.status, 1);
+    assert.equal(item.report.errors[0].code, 'ACTION_REPORTS');
+    assert.equal(item.outputs.verdict, '');
+  });
+}
+
 test('working-directory changes the CLI cwd and report base, preserving native GitHub context', async (t) => {
   const item = await fixture(t, { HUE_ACTION_WORKING_DIRECTORY: 'agent', GITHUB_EVENT_PATH: '/event/path' });
   await mkdir(join(item.directory, 'agent'));
@@ -119,7 +137,21 @@ test('report paths cannot escape through a workspace symlink', async (t) => {
   const result = spawnSync(process.execPath, [join(root, 'src/run.mjs')], { env: item.env, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(await readdir(outside), []);
-  const report = JSON.parse(await readFile(join(item.directory, '.hue/reports/results.json'), 'utf8'));
+  const reports = (await readdir(item.env.RUNNER_TEMP)).find((name) => name.startsWith('hue-reports-'));
+  const report = JSON.parse(await readFile(join(item.env.RUNNER_TEMP, reports, 'results.json'), 'utf8'));
+  assert.equal(report.errors[0].code, 'ACTION_PATH');
+});
+
+test('invalid working-directory never writes through the fallback .hue symlink', async (t) => {
+  const item = await fixture(t, { HUE_ACTION_WORKING_DIRECTORY: '../outside' });
+  const outside = await mkdtemp(join(tmpdir(), 'hue-action-fallback-'));
+  t.after(() => rm(outside, { recursive: true, force: true }));
+  await symlink(outside, join(item.directory, '.hue'));
+  const result = spawnSync(process.execPath, [join(root, 'src/run.mjs')], { env: item.env, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(await readdir(outside), []);
+  const reports = (await readdir(item.env.RUNNER_TEMP)).find((name) => name.startsWith('hue-reports-'));
+  const report = JSON.parse(await readFile(join(item.env.RUNNER_TEMP, reports, 'results.json'), 'utf8'));
   assert.equal(report.errors[0].code, 'ACTION_PATH');
 });
 
