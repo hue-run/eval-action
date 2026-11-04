@@ -2,7 +2,7 @@
 
 ## Sub-features
 
-- The actual job is named `Hue / Evals`.
+- Workflow `Hue` and job `Evals` display together as `Hue / Evals` without a repeated prefix.
 - `pull_request` and `merge_group` use the event checkout commit.
 - PR updates cancel only the superseded PR run.
 - Summary and report upload precede the restored failure.
@@ -17,4 +17,4 @@ Run `node --test --test-name-pattern='workflow uses' tests/action.test.mjs`. The
 
 ## Gotchas
 
-YAML parsing does not prove GitHub accepted the workflow. The private draft cannot be consumed across repositories until the owner permits private Action access. A real merge queue event requires repository setup outside this change.
+YAML parsing does not prove GitHub accepted the workflow. Inspect both the workflow and job names in the PR checks. A real merge queue event requires repository setup outside this change.
