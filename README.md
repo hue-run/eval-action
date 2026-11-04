@@ -13,7 +13,7 @@ hue eval --ci --config hue.eval.json --report-dir .hue/reports
 3. Create a **Read and write** project key in Hue **Settings → API keys**. Store it as the GitHub Actions secret `HUE_API_KEY`.
 4. Copy [examples/hue-evals.yml](examples/hue-evals.yml) to `.github/workflows/hue-evals.yml`. Replace `npm ci` with your project's dependency installation and add the model credentials your agent already uses to the Action step's environment.
 
-The workflow's actual job name is `Hue / Evals`. It handles `pull_request` and `merge_group` with `contents: read`. Checkout uses GitHub's event commit: the PR test merge commit or merge-group commit. The runner records `git HEAD` as the tested commit and keeps the PR head separately. PR updates cancel older runs of that PR; separate merge-group refs have separate concurrency groups and do not cancel one another.
+GitHub displays the workflow `Hue` and job `Evals` together as `Hue / Evals`. It handles `pull_request` and `merge_group` with `contents: read`. Checkout uses GitHub's event commit: the PR test merge commit or merge-group commit. The runner records `git HEAD` as the tested commit and keeps the PR head separately. PR updates cancel older runs of that PR; separate merge-group refs have separate concurrency groups and do not cancel one another.
 
 Fork and Dependabot pull requests normally lack ordinary Actions secrets. The Action fails with an authentication report when `HUE_API_KEY` is missing. Run the evaluation on a trusted branch with the required secrets. Do not use `pull_request_target` to execute untrusted code with secrets. Missing model credentials must also fail in your agent or its setup.
 

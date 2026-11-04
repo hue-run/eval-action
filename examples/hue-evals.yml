@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   evals:
-    name: Hue / Evals
+    name: Evals
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

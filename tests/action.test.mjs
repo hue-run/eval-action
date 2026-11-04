@@ -181,7 +181,8 @@ test('workflow uses the actual check name, tested checkout, isolated merge group
   const workflow = parse(await readFile(join(root, 'examples/hue-evals.yml'), 'utf8'));
   assert.deepEqual(Object.keys(workflow.on), ['pull_request', 'merge_group']);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
-  assert.equal(workflow.jobs.evals.name, 'Hue / Evals');
+  assert.equal(workflow.name, 'Hue');
+  assert.equal(workflow.jobs.evals.name, 'Evals');
   assert.match(workflow.concurrency.group, /github.event_name/);
   assert.match(workflow.concurrency.group, /github.ref/);
   assert.equal(workflow.concurrency['cancel-in-progress'], "${{ github.event_name == 'pull_request' }}");
