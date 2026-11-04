@@ -12,7 +12,17 @@ if (mode === 'cancel') {
   await new Promise(() => setInterval(() => {}, 1_000));
 }
 const exitCode = { pass: 0, quality: 1, auth: 2, incomplete: 1, 'invalid-report': 0, 'post-receipt-error': 1 }[mode] ?? 1;
-const receipt = ['pass', 'quality', 'post-receipt-error'].includes(mode) ? { id: 'synthetic-receipt', verdict: mode === 'quality' ? 'fail' : 'pass' } : null;
+const receipt = ['pass', 'quality', 'post-receipt-error'].includes(mode) ? {
+  id: 'synthetic-receipt',
+  manifestDigest: 'synthetic-manifest-digest',
+  runId: 'synthetic-run',
+  scoringRunId: 'synthetic-scoring-run',
+  verdict: mode === 'quality' ? 'fail' : 'pass',
+  finalizedAt: '2026-11-04T00:00:00.000Z',
+  executionIds: ['synthetic-execution'],
+  results: [],
+  reasons: [],
+} : null;
 const report = {
   schemaVersion: 1,
   invocationId: 'synthetic-invocation',
@@ -29,6 +39,7 @@ const corrupt = process.env.FIXTURE_CORRUPT;
 if (corrupt === 'failed-receipt-zero-exit') report.verdict = report.receipt.verdict = 'fail';
 if (corrupt === 'receipt-disagrees') report.receipt.verdict = 'fail';
 if (corrupt === 'unknown-verdict') report.verdict = report.receipt.verdict = 'unknown';
+if (corrupt === 'null-receipt-verdict') report.verdict = report.receipt.verdict = null;
 if (corrupt === 'error-category') report.category = 'hue_error';
 if (corrupt === 'unknown-category') report.category = 'unknown';
 if (corrupt === 'errors-on-pass') report.errors = [{ code: 'FAILURE', message: 'Failure' }];
