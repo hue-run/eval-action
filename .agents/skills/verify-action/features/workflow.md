@@ -1,0 +1,20 @@
+# GitHub workflow
+
+## Sub-features
+
+- The actual job is named `Hue / Evals`.
+- `pull_request` and `merge_group` use the event checkout commit.
+- PR updates cancel only the superseded PR run.
+- Summary and report upload precede the restored failure.
+
+## How to get to it (user POV)
+
+Copy `examples/hue-evals.yml` into your GitHub repository and open a pull request.
+
+## Driving it with node
+
+Run `node --test --test-name-pattern='workflow uses' tests/action.test.mjs`. The test parses the real YAML. For hosted proof, inspect the PR workflow's exact check name, Action outcomes, and report artifacts.
+
+## Gotchas
+
+YAML parsing does not prove GitHub accepted the workflow. The private draft cannot be consumed across repositories until the owner permits private Action access. A real merge queue event requires repository setup outside this change.
