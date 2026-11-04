@@ -34,7 +34,7 @@ jobs:
         uses: ./
         env:
           BASH_ENV: ${{ github.workspace }}/tests/fixtures/path.sh
-          FIXTURE_MODE: pass
+          FIXTURE_MODE: quality
           HUE_API_KEY: synthetic-key-for-process-fixture
       - name: Check published output files
         if: ${{ always() }}
