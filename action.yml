@@ -1,0 +1,77 @@
+name: Hue evals
+description: Run your agent with the released Hue CLI and publish its reports.
+inputs:
+  config:
+    description: Evaluation configuration path, relative to working-directory.
+    default: hue.eval.json
+  report-dir:
+    description: Report directory, relative to working-directory and inside the workspace.
+    default: .hue/reports
+  working-directory:
+    description: Directory containing the agent project, relative to the workspace.
+    default: .
+  version:
+    description: Exact released runner version, or latest for the latest stable release.
+    default: latest
+outputs:
+  runner-version:
+    description: Exact released runner version installed for this step.
+    value: ${{ steps.eval.outputs.runner-version }}
+  run-url:
+    description: Hue run URL, empty when no run was created.
+    value: ${{ steps.eval.outputs.run-url }}
+  verdict:
+    description: Authoritative receipt verdict, empty when no receipt is available.
+    value: ${{ steps.eval.outputs.verdict }}
+  exit-code:
+    description: Runner exit code, or the wrapper setup failure code.
+    value: ${{ steps.eval.outputs.exit-code }}
+  report-dir:
+    description: Absolute directory containing the reports.
+    value: ${{ steps.eval.outputs.report-dir }}
+  results-json:
+    description: Absolute path to results.json.
+    value: ${{ steps.eval.outputs.results-json }}
+  junit-xml:
+    description: Absolute path to junit.xml.
+    value: ${{ steps.eval.outputs.junit-xml }}
+  summary-md:
+    description: Absolute path to summary.md.
+    value: ${{ steps.eval.outputs.summary-md }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js 24
+      id: node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+        package-manager-cache: false
+    - name: Run Hue
+      id: eval
+      if: ${{ always() }}
+      shell: bash
+      env:
+        HUE_ACTION_CONFIG: ${{ inputs.config }}
+        HUE_ACTION_REPORT_DIR: ${{ inputs.report-dir }}
+        HUE_ACTION_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        HUE_ACTION_VERSION: ${{ inputs.version }}
+        HUE_ACTION_NODE_OUTCOME: ${{ steps.node.outcome }}
+      run: node "$GITHUB_ACTION_PATH/src/run.mjs"
+    - name: Upload Hue reports
+      if: ${{ always() && steps.eval.outputs.report-dir != '' }}
+      uses: actions/upload-artifact@v6
+      with:
+        name: hue-evals-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          ${{ steps.eval.outputs.results-json }}
+          ${{ steps.eval.outputs.junit-xml }}
+          ${{ steps.eval.outputs.summary-md }}
+        include-hidden-files: true
+        if-no-files-found: error
+    - name: Preserve Hue exit status
+      if: ${{ always() }}
+      shell: bash
+      env:
+        HUE_EXIT_CODE: ${{ steps.eval.outputs.exit-code }}
+      run: exit "${HUE_EXIT_CODE:-2}"

@@ -1,0 +1,52 @@
+name: Verify Action
+on:
+  pull_request:
+  merge_group:
+permissions:
+  contents: read
+concurrency:
+  group: action-verification-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  wrapper:
+    name: Hue / Evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - name: Prepare synthetic runner
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/hue-fixture-bin"
+          cp tests/fixtures/npm.mjs "$RUNNER_TEMP/hue-fixture-bin/npm"
+          cp tests/fixtures/runner.mjs "$RUNNER_TEMP/hue-fixture-bin/runner.mjs"
+          chmod +x "$RUNNER_TEMP/hue-fixture-bin/npm"
+      - name: Drive the composite Action
+        id: hue
+        uses: ./
+        env:
+          BASH_ENV: ${{ github.workspace }}/tests/fixtures/path.sh
+          FIXTURE_MODE: pass
+          HUE_API_KEY: ''
+      - name: Check published output files
+        if: ${{ always() }}
+        shell: bash
+        env:
+          RESULTS: ${{ steps.hue.outputs.results-json }}
+          JUNIT: ${{ steps.hue.outputs.junit-xml }}
+          SUMMARY: ${{ steps.hue.outputs.summary-md }}
+          EXIT_CODE: ${{ steps.hue.outputs.exit-code }}
+        run: |
+          test -f "$RESULTS"
+          test -f "$JUNIT"
+          test -f "$SUMMARY"
+          test -n "$EXIT_CODE"
+          node -e 'const fs = require("fs"); const r = JSON.parse(fs.readFileSync(process.env.RESULTS)); if (String(r.exitCode) !== process.env.EXIT_CODE) process.exit(1);'
