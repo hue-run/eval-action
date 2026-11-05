@@ -38,9 +38,10 @@ test("the results table lists what ran and keeps a failed case visible", () => {
   const comment = renderComment([block]);
   assert.match(comment, /hue-mark\.png/);
   assert.match(comment, /\*\*\[Town recruiting\]\(https:\/\/app\.hue\.run\/runs\/two\)\*\* · 1 passed · 1 failed/);
-  assert.match(comment, /\| REC-05 · Draft rejection \| Failed \|/);
-  const failed = comment.indexOf("Failed");
-  const passed = comment.indexOf("| Passed |");
+  assert.match(comment, /\| REC-05 · Draft rejection \| 🔴 Failed \|/);
+  assert.match(comment, /\| REC-09 · Schedule Imani \| 🟢 Passed \|/);
+  const failed = comment.indexOf("🔴 Failed");
+  const passed = comment.indexOf("| 🟢 Passed |");
   assert.ok(failed < passed);
 });
 
@@ -100,7 +101,7 @@ test("a pull request gets one comment, then that comment is edited", async () =>
   };
   assert.equal(await publishEvalComment(env, { name: "Town recruiting", report }, fetcher), "updated");
   assert.equal(calls.some((call) => call.method === "POST"), false);
-  assert.match(comments[0].body, /REC-09 · Schedule Imani \| Failed/);
+  assert.match(comments[0].body, /REC-09 · Schedule Imani \| 🔴 Failed/);
   assert.equal(comments.length, 1);
 });
 
