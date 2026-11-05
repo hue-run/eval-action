@@ -43,13 +43,18 @@ export function caseResults(receipt) {
   return [...by.values()];
 }
 
-const TEXT = "\uFE0E";
+const ICON = "https://raw.githubusercontent.com/hue-run/eval-action/v1/assets";
+
+function resultMark(file, label) {
+  return `<img src="${ICON}/${file}" height="13" alt="" align="absmiddle" /> ${label}`;
+}
+
 const RESULT_MARK = {
-  Passed: `\u2713${TEXT} Passed`,
-  Failed: `\u2717${TEXT} Failed`,
-  Errored: `\u0021 Errored`,
-  Incomplete: `\u2013 Incomplete`,
-  "No score": `\u2013 No score`,
+  Passed: resultMark("pass.png", "Passed"),
+  Failed: resultMark("fail.png", "Failed"),
+  Errored: resultMark("error.png", "Errored"),
+  Incomplete: resultMark("incomplete.png", "Incomplete"),
+  "No score": resultMark("none.png", "No score"),
 };
 
 export function resultLabel(row) {
@@ -82,7 +87,7 @@ export function jobBlock(name, { status, runUrl, rows, names, detail } = {}) {
   const url = typeof runUrl === "string" && /^https:\/\/\S+$/.test(runUrl) ? runUrl : "";
   const heading = url ? `**[${title}](${url})**` : `**${title}**`;
   const summary = rows?.length ? tally(rows) : statusLine(status);
-  const body = [heading, "", summary];
+  const body = [`${heading}: ${summary}`];
   if (rows?.length) body.push("", table(rows, names));
   else if (detail) body.push("", clean(detail, 240));
   const key = jobKey(title);
