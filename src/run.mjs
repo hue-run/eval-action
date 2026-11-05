@@ -1,3 +1,4 @@
+import { publishEvalComment, readEvalName, statusForReport } from './comment.mjs';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { appendFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -118,6 +119,7 @@ export async function runAction(env = process.env) {
   let installDir;
   let report;
   let exitCode = 2;
+  let label = 'Evals';
   try {
     const cwd = await workspacePath(workspace, resolve(workspace, env.HUE_ACTION_WORKING_DIRECTORY || '.'));
     reportDir = await workspacePath(workspace, resolve(cwd, env.HUE_ACTION_REPORT_DIR || '.hue/reports'));
@@ -136,6 +138,8 @@ export async function runAction(env = process.env) {
     if (requested !== 'latest' && !exactVersion.test(requested)) {
       throw new ActionError('ACTION_VERSION', 'version must be latest or an exact released runner version such as 0.26.0.');
     }
+    label = await readEvalName(resolve(cwd, env.HUE_ACTION_CONFIG || 'hue.eval.json'));
+    await publishEvalComment(env, { name: label, status: 'running' });
     const options = { cwd, env };
     let version = requested;
     if (version === 'latest') {
@@ -163,6 +167,7 @@ export async function runAction(env = process.env) {
       await readFile(join(reportDir, 'summary.md'), 'utf8');
       if (exitCode === 0 && (!report.receipt || !report.verdict)) throw new Error('No authoritative receipt');
       if (exitCode !== report.exitCode) throw new Error('Report and process exit disagree');
+      await publishEvalComment(env, { name: label, ...statusForReport(report) });
     } catch {
       throw new ActionError('ACTION_REPORTS', 'The runner did not produce complete CI reports. Use a released runner that supports --ci, --config, and --report-dir.', 'hue_error', exitCode || 1);
     }
@@ -178,6 +183,7 @@ export async function runAction(env = process.env) {
       reportDir = fallbackDir;
       report = await setupReports(reportDir, failure);
     }
+    await publishEvalComment(env, { name: label, ...statusForReport(report) });
   } finally {
     process.removeListener('SIGINT', cancel);
     process.removeListener('SIGTERM', cancel);

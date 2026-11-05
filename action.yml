@@ -57,6 +57,7 @@ runs:
         HUE_ACTION_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         HUE_ACTION_VERSION: ${{ inputs.version }}
         HUE_ACTION_NODE_OUTCOME: ${{ steps.node.outcome }}
+        HUE_ACTION_GITHUB_TOKEN: ${{ github.token }}
       run: node "$GITHUB_ACTION_PATH/src/run.mjs"
     - name: Upload Hue reports
       if: ${{ always() && steps.eval.outputs.report-dir != '' }}
