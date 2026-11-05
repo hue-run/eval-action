@@ -38,8 +38,8 @@ test("the results table lists what ran and keeps a failed case visible", () => {
   const comment = renderComment([block]);
   assert.match(comment, /<img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/hue-mark\.png" height="28" alt="" \/>\n\n\*\*Hue\*\*/);
   assert.match(comment, /\*\*\[Town recruiting\]\(https:\/\/app\.hue\.run\/runs\/two\)\*\*: 1 passed, 1 failed/);
-  assert.match(comment, /\| REC-05 · Draft rejection \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/fail\.png\?v=2" height="13" alt="" align="absmiddle" \/> Failed \|/);
-  assert.match(comment, /\| REC-09 · Schedule Imani \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/pass\.png\?v=2" height="13" alt="" align="absmiddle" \/> Passed \|/);
+  assert.match(comment, /\| REC-05 · Draft rejection \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/fail\.png\?v=3" height="13" alt="" align="absmiddle" \/> Failed \|/);
+  assert.match(comment, /\| REC-09 · Schedule Imani \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/pass\.png\?v=3" height="13" alt="" align="absmiddle" \/> Passed \|/);
   const failed = comment.indexOf("fail.png");
   const passed = comment.indexOf("pass.png");
   assert.ok(failed < passed);
@@ -101,7 +101,7 @@ test("a pull request gets one comment, then that comment is edited", async () =>
   };
   assert.equal(await publishEvalComment(env, { name: "Town recruiting", report }, fetcher), "updated");
   assert.equal(calls.some((call) => call.method === "POST"), false);
-  assert.match(comments[0].body, /REC-09 · Schedule Imani \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/fail\.png\?v=2" height="13" alt="" align="absmiddle" \/> Failed/);
+  assert.match(comments[0].body, /REC-09 · Schedule Imani \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/fail\.png\?v=3" height="13" alt="" align="absmiddle" \/> Failed/);
   assert.equal(comments.length, 1);
 });
 
