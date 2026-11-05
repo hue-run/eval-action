@@ -46,7 +46,7 @@ export function caseResults(receipt) {
 const ICON = "https://raw.githubusercontent.com/hue-run/eval-action/v1/assets";
 
 function resultMark(file, label) {
-  return `<img src="${ICON}/${file}" height="13" alt="" align="absmiddle" /> ${label}`;
+  return `<img src="${ICON}/${file}?v=2" height="13" alt="" align="absmiddle" /> ${label}`;
 }
 
 const RESULT_MARK = {
