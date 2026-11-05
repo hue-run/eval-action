@@ -38,6 +38,14 @@ export function caseResults(receipt) {
   return [...by.values()];
 }
 
+const RESULT_MARK = {
+  Passed: "🟢 Passed",
+  Failed: "🔴 Failed",
+  Errored: "🟠 Errored",
+  Incomplete: "🟡 Incomplete",
+  "No score": "⚪ No score",
+};
+
 export function resultLabel(row) {
   if (row.errored) return "Errored";
   if (row.failed > 0) return "Failed";
@@ -57,7 +65,7 @@ function table(rows, names) {
   const lines = rows
     .map((row) => ({ name: clean(names?.get(row.id) || row.id, 72) || row.id, label: resultLabel(row) }))
     .sort((left, right) => Number(right.label !== "Passed") - Number(left.label !== "Passed") || left.name.localeCompare(right.name));
-  const shown = lines.slice(0, 20).map((line) => `| ${line.name} | ${line.label} |`);
+  const shown = lines.slice(0, 20).map((line) => `| ${line.name} | ${RESULT_MARK[line.label] || line.label} |`);
   const more = lines.length > 20 ? `\n\n${lines.length - 20} more cases are in the run.` : "";
   return `| Case | Result |\n| :--- | :--- |\n${shown.join("\n")}${more}`;
 }
