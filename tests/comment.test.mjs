@@ -28,6 +28,8 @@ test("the results table lists what ran and keeps a failed case visible", () => {
     ],
   });
   assert.equal(resultLabel(outcome[0]), "Failed");
+  const skipped = caseResults({ results: [{ caseId: "d", state: "skipped", metrics: [] }] });
+  assert.equal(resultLabel(skipped[0]), "Incomplete");
   const block = jobBlock("Town recruiting", {
     runUrl: "https://app.hue.run/runs/two",
     rows,
