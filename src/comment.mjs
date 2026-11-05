@@ -43,12 +43,13 @@ export function caseResults(receipt) {
   return [...by.values()];
 }
 
+const TEXT = "\uFE0E";
 const RESULT_MARK = {
-  Passed: "🟢 Passed",
-  Failed: "🔴 Failed",
-  Errored: "🟠 Errored",
-  Incomplete: "🟡 Incomplete",
-  "No score": "⚪ No score",
+  Passed: `\u2713${TEXT} Passed`,
+  Failed: `\u2717${TEXT} Failed`,
+  Errored: `\u0021 Errored`,
+  Incomplete: `\u2013 Incomplete`,
+  "No score": `\u2013 No score`,
 };
 
 export function resultLabel(row) {
@@ -61,9 +62,8 @@ export function resultLabel(row) {
 
 function tally(rows) {
   const counts = { Passed: 0, Failed: 0, Errored: 0, Incomplete: 0, "No score": 0 };
-  const mark = { Passed: "🟢", Failed: "🔴", Errored: "🟠", Incomplete: "🟡" };
   for (const row of rows) counts[resultLabel(row)] += 1;
-  const parts = ["Passed", "Failed", "Errored", "Incomplete"].filter((label) => counts[label] > 0).map((label) => `${mark[label]} ${counts[label]} ${label.toLowerCase()}`);
+  const parts = ["Passed", "Failed", "Errored", "Incomplete"].filter((label) => counts[label] > 0).map((label) => `${counts[label]} ${label.toLowerCase()}`);
   return parts.join(", ") || "no cases";
 }
 
