@@ -16,7 +16,7 @@ test("one comment keeps each job on its own line and replaces that line", () => 
   const both = upsertLine(running, commentLine("Town recruiting routines", "passed", "https://app.hue.run/runs/one"));
   const finished = upsertLine(both, commentLine("Town recruiting", "failed", "https://app.hue.run/runs/two"));
   assert.equal(finished, `<!-- hue-evals -->
-**Hue**
+### <img src="https://app.hue.run/hue-mark.png" height="32" alt="" align="center" /> Hue
 
 Town recruiting — failed · [run](https://app.hue.run/runs/two)
 Town recruiting routines — passed · [run](https://app.hue.run/runs/one)

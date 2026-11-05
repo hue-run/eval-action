@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 
 const MARKER = "<!-- hue-evals -->";
 const EM = " — ";
+// Same mark the app serves for clients. GitHub keeps the image and align attribute, and drops CSS.
+const HUE_MARK = "https://app.hue.run/hue-mark.png";
+const HEADING = `### <img src="${HUE_MARK}" height="32" alt="" align="center" /> Hue`;
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const VERDICT = {
   pass: "passed",
@@ -27,7 +30,7 @@ export function upsertLine(body, line) {
     .filter((row) => row.includes(EM) && !row.startsWith("<!--") && !row.startsWith(`${key}${EM}`));
   kept.push(line);
   kept.sort((left, right) => left.localeCompare(right));
-  return `${MARKER}\n**Hue**\n\n${kept.join("\n")}\n`;
+  return `${MARKER}\n${HEADING}\n\n${kept.join("\n")}\n`;
 }
 
 export function statusForReport(report) {
