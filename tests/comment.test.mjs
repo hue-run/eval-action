@@ -36,8 +36,8 @@ test("the results table lists what ran and keeps a failed case visible", () => {
     names: new Map([["a", "REC-09 · Schedule Imani"], ["b", "REC-05 · Draft | rejection"]]),
   });
   const comment = renderComment([block]);
-  assert.match(comment, /hue-mark\.png/);
-  assert.match(comment, /\*\*\[Town recruiting\]\(https:\/\/app\.hue\.run\/runs\/two\)\*\* · 1 passed · 1 failed/);
+  assert.match(comment, /<img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/hue-mark\.png" height="28" alt="" \/>\n\n\*\*Hue\*\*/);
+  assert.match(comment, /\*\*\[Town recruiting\]\(https:\/\/app\.hue\.run\/runs\/two\)\*\*\n\n🟢 1 passed, 🔴 1 failed/);
   assert.match(comment, /\| REC-05 · Draft rejection \| 🔴 Failed \|/);
   assert.match(comment, /\| REC-09 · Schedule Imani \| 🟢 Passed \|/);
   const failed = comment.indexOf("🔴 Failed");
@@ -52,7 +52,7 @@ test("a second job edits the same comment", () => {
   assert.equal(finished.split("<!-- hue-evals -->").length, 2);
   assert.match(finished, /Town recruiting routines/);
   assert.match(finished, /runs\/two/);
-  assert.doesNotMatch(finished, /Town recruiting\*\* · running/);
+  assert.doesNotMatch(finished, /\*\*Town recruiting\*\*\n\nRunning/);
 });
 
 test("the config name is the comment section", async () => {
