@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 const MARKER = "<!-- hue-evals -->";
 const MARK = "https://raw.githubusercontent.com/hue-run/eval-action/v1/assets/hue-mark.png";
-const HEADING = `## <img src="${MARK}" height="28" alt="" align="center" /> Hue`;
+const HEADING = `<img src="${MARK}" height="28" alt="" />\n\n**Hue**`;
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VERDICT = {
@@ -15,6 +15,11 @@ const VERDICT = {
 
 function clean(value, max = 80) {
   return String(value || "").replace(/[\r\n|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function statusLine(status) {
+  const text = clean(status, 40) || "running";
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function jobKey(name) {
@@ -56,9 +61,10 @@ export function resultLabel(row) {
 
 function tally(rows) {
   const counts = { Passed: 0, Failed: 0, Errored: 0, Incomplete: 0, "No score": 0 };
+  const mark = { Passed: "🟢", Failed: "🔴", Errored: "🟠", Incomplete: "🟡" };
   for (const row of rows) counts[resultLabel(row)] += 1;
-  const parts = ["Passed", "Failed", "Errored", "Incomplete"].filter((label) => counts[label] > 0).map((label) => `${counts[label]} ${label.toLowerCase()}`);
-  return parts.join(" · ") || "no cases";
+  const parts = ["Passed", "Failed", "Errored", "Incomplete"].filter((label) => counts[label] > 0).map((label) => `${mark[label]} ${counts[label]} ${label.toLowerCase()}`);
+  return parts.join(", ") || "no cases";
 }
 
 function table(rows, names) {
@@ -75,8 +81,8 @@ export function jobBlock(name, { status, runUrl, rows, names, detail } = {}) {
   const title = clean(name, 80) || "Evals";
   const url = typeof runUrl === "string" && /^https:\/\/\S+$/.test(runUrl) ? runUrl : "";
   const heading = url ? `**[${title}](${url})**` : `**${title}**`;
-  const summary = rows?.length ? tally(rows) : clean(status, 40) || "running";
-  const body = [`${heading} · ${summary}`];
+  const summary = rows?.length ? tally(rows) : statusLine(status);
+  const body = [heading, "", summary];
   if (rows?.length) body.push("", table(rows, names));
   else if (detail) body.push("", clean(detail, 240));
   const key = jobKey(title);
