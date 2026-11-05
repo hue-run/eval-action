@@ -28,9 +28,10 @@ export function caseResults(receipt) {
     const row = by.get(result.caseId) || { id: result.caseId, passed: 0, failed: 0, errored: false, pending: false };
     if (result.state === "error") row.errored = true;
     if (result.state === "pending") row.pending = true;
-    const verdict = Array.isArray(result.metrics) ? result.metrics.find((metric) => metric?.name === "verdict") : null;
-    if (verdict?.passed === true) row.passed += 1;
-    if (verdict?.passed === false) row.failed += 1;
+    for (const metric of result.metrics || []) {
+      if (metric?.passed === true) row.passed += 1;
+      if (metric?.passed === false) row.failed += 1;
+    }
     by.set(result.caseId, row);
   }
   return [...by.values()];
@@ -135,13 +136,20 @@ async function caseNames(fetcher, env, runId) {
     const response = await fetcher(`https://app.hue.run/api/v1/experiments/${runId}/items?limit=100`, {
       headers: { Accept: "application/json", Authorization: `Bearer ${key}` },
       redirect: "error",
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(20_000),
     });
     if (!response.ok) return names;
-    const payload = await response.json();
-    for (const item of payload?.items || []) {
+    const text = await response.text();
+    const start = text.indexOf("{");
+    const listStart = text.indexOf("[");
+    const slice = start === -1 ? listStart : listStart === -1 ? start : Math.min(start, listStart);
+    const payload = JSON.parse(slice === -1 ? text : text.slice(slice));
+    const items = Array.isArray(payload) ? payload : payload?.items || payload?.data || [];
+    for (const item of items) {
       const label = clean(item?.externalKey || item?.displayName, 72);
-      if (typeof item?.id === "string" && label) names.set(item.id, label);
+      if (!label) continue;
+      if (typeof item?.id === "string") names.set(item.id, label);
+      if (typeof item?.caseId === "string") names.set(item.caseId, label);
     }
   } catch {
     // The table still renders with case ids when the name lookup fails.

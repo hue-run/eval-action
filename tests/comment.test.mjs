@@ -22,6 +22,12 @@ test("the results table lists what ran and keeps a failed case visible", () => {
     ],
   });
   assert.equal(resultLabel(rows.find((row) => row.id === "b")), "Failed");
+  const outcome = caseResults({
+    results: [
+      { caseId: "c", state: "scored", metrics: [{ name: "verdict", passed: true }, { name: "task_success", passed: false }] },
+    ],
+  });
+  assert.equal(resultLabel(outcome[0]), "Failed");
   const block = jobBlock("Town recruiting", {
     runUrl: "https://app.hue.run/runs/two",
     rows,
