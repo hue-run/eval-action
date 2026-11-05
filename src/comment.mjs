@@ -25,9 +25,10 @@ export function caseResults(receipt) {
   const by = new Map();
   for (const result of receipt?.results || []) {
     if (typeof result?.caseId !== "string") continue;
-    const row = by.get(result.caseId) || { id: result.caseId, passed: 0, failed: 0, errored: false, pending: false };
+    const row = by.get(result.caseId) || { id: result.caseId, passed: 0, failed: 0, errored: false, pending: false, skipped: false };
     if (result.state === "error") row.errored = true;
     if (result.state === "pending") row.pending = true;
+    if (result.state === "skipped") row.skipped = true;
     for (const metric of result.metrics || []) {
       if (metric?.passed === true) row.passed += 1;
       if (metric?.passed === false) row.failed += 1;
@@ -40,7 +41,7 @@ export function caseResults(receipt) {
 export function resultLabel(row) {
   if (row.errored) return "Errored";
   if (row.failed > 0) return "Failed";
-  if (row.pending) return "Incomplete";
+  if (row.pending || (row.passed === 0 && row.skipped)) return "Incomplete";
   if (row.passed > 0) return "Passed";
   return "No score";
 }
