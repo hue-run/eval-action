@@ -103,6 +103,21 @@ test("a pull request gets one comment, then that comment is edited", async () =>
   assert.equal(calls.some((call) => call.method === "POST"), false);
   assert.match(comments[0].body, /REC-09 · Schedule Imani \| <img src="https:\/\/raw\.githubusercontent\.com\/hue-run\/eval-action\/v1\/assets\/fail\.png\?v=5" height="13" alt="" align="absmiddle" \/> Failed/);
   assert.equal(comments.length, 1);
+
+  const recovery = "Hue evaluation could not complete; recover with hue eval status";
+  for (const verdict of [null, "incomplete"]) {
+    const unfinished = {
+      ...report,
+      verdict,
+      receipt: verdict ? { verdict, results: [] } : null,
+      category: verdict || "hue_error",
+      errors: [{ code: "HUE_ERROR", message: recovery }],
+    };
+    assert.equal(await publishEvalComment(env, { name: "Town recruiting", report: unfinished }, fetcher), "updated");
+    assert.ok(comments[0].body.includes(`\n<img src="https://raw.githubusercontent.com/hue-run/eval-action/v1/assets/incomplete.png?v=5" height="13" alt="" align="absmiddle" /> ${recovery}\n`));
+    assert.doesNotMatch(comments[0].body, /\| Case \| Result \|/);
+    assert.equal(comments.length, 1);
+  }
 });
 
 test("no pull request and a refused token leave the evaluation alone", async () => {

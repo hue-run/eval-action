@@ -89,7 +89,10 @@ export function jobBlock(name, { status, runUrl, rows, names, detail } = {}) {
   const summary = rows?.length ? tally(rows) : statusLine(status);
   const body = [`${heading}: ${summary}`];
   if (rows?.length) body.push("", table(rows, names));
-  else if (detail) body.push("", clean(detail, 240));
+  else if (detail) {
+    const message = clean(detail, 240);
+    body.push("", status === "incomplete" || status === "did not finish" ? resultMark("incomplete.png", message) : message);
+  }
   const key = jobKey(title);
   return `<!-- hue-eval:${key} -->\n${body.join("\n")}\n<!-- /hue-eval:${key} -->`;
 }
